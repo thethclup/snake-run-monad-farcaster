@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neon-green: #00ff00;
+  --neon-pink: #ff00ff;
+}
+
+body {
+  background-color: #1a1a1a;
+}
