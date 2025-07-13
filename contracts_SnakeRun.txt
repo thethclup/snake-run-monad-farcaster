@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract SnakeRun {
+    struct PlayerScore {
+        address player;
+        uint256 score;
+        uint256 timestamp;
+    }
+
+    mapping(address => uint256) public playerHighScores;
+    PlayerScore[] public leaderboard;
+    uint256 public constant MAX_LEADERBOARD_SIZE = 10;
+
+    event ScoreSubmitted(address indexed player, uint256 score, uint256 timestamp);
+    event LeaderboardUpdated(address indexed player, uint256 score);
+
+    // Submit a new score
+    function submitScore(uint256 _score) external {
+        require(_score > 0, "Score must be greater than 0");
+
+        // Update player's high score if higher
+        if (_score > playerHighScores[msg.sender]) {
+            playerHighScores[msg.sender] = _score;
+
+            // Update leaderboard
+            updateLeaderboard(msg.sender, _score);
+        }
+
+        emit ScoreSubmitted(msg.sender, _score, block.timestamp);
+    }
+
+    // Update leaderboard with new score
+    function updateLeaderboard(address _player, uint256 _score) internal {
+        // Remove existing entry for player, if any
+        for (uint256 i = 0; i < leaderboard.length; i++) {
+            if (leaderboard[i].player == _player) {
+                for (uint256 j = i; j < leaderboard.length - 1; j++) {
+                    leaderboard[j] = leaderboard[j + 1];
+                }
+                leaderboard.pop();
+                break;
+            }
+        }
+
+        // Add new score
+        leaderboard.push(PlayerScore(_player, _score, block.timestamp));
+
+        // Sort leaderboard (descending order by score)
+        for (uint256 i = leaderboard.length - 1; i > 0; i--) {
+            if (leaderboard[i].score > leaderboard[i - 1].score) {
+                PlayerScore memory temp = leaderboard[i];
+                leaderboard[i] = leaderboard[i - 1];
+                leaderboard[i - 1] = temp;
+            }
+        }
+
+        // Trim leaderboard to max size
+        if (leaderboard.length > MAX_LEADERBOARD_SIZE) {
+            leaderboard.pop();
+        }
+
+        emit LeaderboardUpdated(_player, _score);
+    }
+
+    // Get leaderboard
+    function getLeaderboard() external view returns (PlayerScore[] memory) {
+        return leaderboard;
+    }
+
+    // Get player's high score
+    function getPlayerScore(address _player) external view returns (uint256) {
+        return playerHighScores[_player];
+    }
+}
